@@ -6,13 +6,16 @@ import tkinter as tk
 from tkinter import filedialog
 import traceback
 import os
-from pathlib import Path
-import subprocess
+
+from kicad_processing_tools import kicad_process_project
 
 
 project_fn=""#"C:\\Gordiushenkov\\Manufacturing\\Outsourcing\\EV48.01_11339_M.zip"
 kicad_cli_path = r"C:\Program Files\KiCad\7.0\bin\kicad-cli"
+bom_paths = [r"C:\Gordiushenkov\SlopeHelper\kicad5_libs\Scripts\bom_csv_eurocircuits_grouped_dnp.py",
+    r"C:\Gordiushenkov\SlopeHelper\kicad5_libs\Scripts\bom_csv_KiCad_grouped_by_pn_and_fp_semicol.py"]
 CAM_folder_name = "CAMOutputs"
+PDF_folder_name = 'PDFs'
 
 def open_project():
     global project_fn
@@ -21,25 +24,10 @@ def open_project():
 
 def process():
     try:
-        path_obj = Path(project_fn)
-        sch_fn = path_obj.with_suffix(".kicad_sch")
-        pcb_fn = path_obj.with_suffix(".kicad_pcb")
-        root_folder = path_obj.parent.parent
-        output_folder = root_folder / CAM_folder_name
+        result = kicad_process_project(kicad_cli_path, project_fn, bom_paths, CAM_folder_name, PDF_folder_name)
 
-        command = f'"{kicad_cli_path}"' + " pcb export gerbers " + str(pcb_fn) + ' -o ' + str(output_folder) \
-                  + ' --layers F.Cu,Edge.Cuts,B.Cu,F.Silkscreen,F.Mask,F.Paste --no-x2 --no-protel-ext --subtract-soldermask'
-        msg = f'{command}\n'
-        print(command)
-        result = subprocess.run(command, shell=True, capture_output=True, text=True)
-
-        # Print the output
-        msg += result.stdout + '\n'
-        if result.returncode:
-            msg += result.stderr + '\n'
-        print(result)
         text_box_output.delete('1.0', tk.END)
-        text_box_output.insert('1.0', msg)
+        text_box_output.insert('1.0', result)
     except Exception as e:
         msg = 'Runtime error occured:\n'
 

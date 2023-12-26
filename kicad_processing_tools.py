@@ -1,0 +1,99 @@
+# File name: kicad_processing_tools.py
+# Created on: 12/26/2023
+# Created by: Oleg Gordiushenkov
+from pathlib import Path
+import subprocess
+from kicad_sch_tools import kicad_sch_export_bom, kicad_sch_export_pdf
+from kicad_pcb_tools import kicad_pcb_export_gerber, kicad_pcb_export_drill, kicad_pcb_export_pnp
+import zipfile
+
+
+ALL_LAYERS = [
+    'F.Silkscreen',
+    'F.Paste',
+    'F.Mask',
+    'F.Cu',
+    'Edge.Cuts',
+    'B.Cu',
+    'B.Mask',
+    'B.Paste',
+    'B.Silkscreen']
+
+
+def create_zip_archive(archive_name, files_to_pack):
+    fn = archive_name + ".zip"
+    with zipfile.ZipFile(fn, "w", compression=zipfile.ZIP_DEFLATED) as zip_file:
+        for file_to_pack in files_to_pack:
+            # Calculate the relative path within the archive
+            relative_path = Path(file_to_pack).relative_to(Path(files_to_pack[0]).parent)
+
+            # Add the file to the archive with its relative path
+            zip_file.write(file_to_pack, arcname=str(relative_path))
+    return fn
+
+def run_commands(cmds):
+    msg = ''
+    for cmd in cmds:
+        # msg += f'{cmd}\n'
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        msg += result.stdout
+        if result.returncode:
+            msg += result.stderr
+    return msg
+
+def kicad_process_project(kicad_cli_path, project_fn, boms, CAM_folder_name=None, pdf_foldername=None):
+    path_obj = Path(project_fn)
+    sch_fn = path_obj.with_suffix(".kicad_sch")
+    pcb_fn = path_obj.with_suffix(".kicad_pcb")
+    root_folder = path_obj.parent.parent
+    folder_names = [CAM_folder_name, pdf_foldername]
+    fld_dict = {}
+    for fld in folder_names:
+        if fld is not None:
+            fld_dict[fld] = root_folder / fld
+            Path(fld_dict[fld]).mkdir(parents=True, exist_ok=True)
+
+    if not sch_fn.is_file():
+        return f'Error: {sch_fn} does not exist!!!'
+
+    msg = ''
+
+    if CAM_folder_name is not None:
+        msg += run_commands(kicad_sch_export_bom(kicad_cli_path, sch_fn, fld_dict[CAM_folder_name], boms))
+    if pdf_foldername is not None:
+        msg += run_commands(kicad_sch_export_pdf(kicad_cli_path, sch_fn, fld_dict[pdf_foldername]))
+
+    if pcb_fn.is_file():
+        if CAM_folder_name is not None:
+            msg += run_commands(kicad_pcb_export_gerber(kicad_cli_path, pcb_fn, fld_dict[CAM_folder_name], ALL_LAYERS))
+            msg += run_commands(kicad_pcb_export_drill(kicad_cli_path, pcb_fn, fld_dict[CAM_folder_name]))
+            msg += run_commands(kicad_pcb_export_pnp(kicad_cli_path, pcb_fn, fld_dict[CAM_folder_name]))
+
+            # Packing
+            archive_path = str(fld_dict[CAM_folder_name] / path_obj.stem) + ' gerber'
+            selected_files = list(fld_dict[CAM_folder_name].glob(f'*.gbr')) + list(fld_dict[CAM_folder_name].glob(f'*.drl')) + list(fld_dict[CAM_folder_name].glob(f'*pos*.csv'))
+            gerber_arch_fn = create_zip_archive(archive_path, selected_files)
+            msg += f'Gerber archive created: {gerber_arch_fn}\n'
+
+            CAM_archive_path = str(fld_dict[CAM_folder_name] / path_obj.stem) + ' CAM'
+            selected_files = list(fld_dict[CAM_folder_name].glob(f'*BOM*.csv')) + [gerber_arch_fn]
+            CAM_arch_fn = create_zip_archive(CAM_archive_path, selected_files)
+            msg += f'CAM archive created: {CAM_arch_fn}\n'
+
+            manuf_archive_path = str(fld_dict[CAM_folder_name].parent / path_obj.stem) + ' manufacturing'
+            selected_files = list(fld_dict[CAM_folder_name].parent.glob(f'*readme*.txt')) + [CAM_arch_fn]
+            manuf_arch_fn = create_zip_archive(manuf_archive_path, selected_files)
+            msg += f'Manufacturing archive created: {manuf_arch_fn}\n'
+
+
+    return msg
+
+if __name__ == '__main__':
+    project_fn = r"C:\Gordiushenkov\SlopeHelper\Electronics\SH\Units\IntEn\PCBs\power_module_v1_6\Design\power_module_v1_6.kicad_pro"
+    kicad_cli_path = r"C:\Program Files\KiCad\7.0\bin\kicad-cli"
+    bom_paths = [r"C:\Gordiushenkov\SlopeHelper\kicad5_libs\Scripts\bom_csv_eurocircuits_grouped_dnp.py",
+                 r"C:\Gordiushenkov\SlopeHelper\kicad5_libs\Scripts\bom_csv_KiCad_grouped_by_pn_and_fp_semicol.py"]
+    CAM_folder_name = "CAMOutputs"
+    pdf_foldername = "PDFs"
+    result = kicad_process_project(kicad_cli_path, project_fn, bom_paths, CAM_folder_name, pdf_foldername)
+    print(result)
