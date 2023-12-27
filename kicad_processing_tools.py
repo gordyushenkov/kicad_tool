@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 from kicad_sch_tools import kicad_sch_export_bom, kicad_sch_export_pdf
 from kicad_pcb_tools import kicad_pcb_export_gerber, kicad_pcb_export_drill, kicad_pcb_export_pnp
+from kicad_readme_creator import get_readme, get_readme_fn
 import zipfile
 
 
@@ -69,7 +70,15 @@ def kicad_process_project(kicad_cli_path, project_fn, boms, CAM_folder_name=None
             msg += run_commands(kicad_pcb_export_drill(kicad_cli_path, pcb_fn, fld_dict[CAM_folder_name]))
             msg += run_commands(kicad_pcb_export_pnp(kicad_cli_path, pcb_fn, fld_dict[CAM_folder_name]))
 
-            # Packing
+            readme_fn = get_readme_fn(project_fn)
+            readme_text = get_readme(project_fn, fld_dict[CAM_folder_name])
+
+            with open(str(root_folder/readme_fn), 'w') as file:
+                file.write(readme_text)
+                msg += f'Readme file created:\n{readme_fn}'
+
+
+                # Packing
             archive_path = str(fld_dict[CAM_folder_name] / path_obj.stem) + ' gerber'
             selected_files = list(fld_dict[CAM_folder_name].glob(f'*.gbr')) + list(fld_dict[CAM_folder_name].glob(f'*.drl')) + list(fld_dict[CAM_folder_name].glob(f'*pos*.csv'))
             gerber_arch_fn = create_zip_archive(archive_path, selected_files)
