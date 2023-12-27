@@ -3,6 +3,7 @@
 # Created by: Oleg Gordiushenkov
 
 from pathlib import Path
+from kicad_pcb_parser import kicad_pcb_parse
 
 GERBER_LAYERS = {
     'F_Paste':'Top Paste',
@@ -52,15 +53,17 @@ def get_readme(project_fn, CAM_path):
     readme_fn = Path(get_readme_fn(project_fn)).name
     readme_text = ''
     readme_text += f'filename: {readme_fn}\n'
-
     readme_text += f'\n'
+
+    pcb_fn = Path(project_fn).with_suffix(".kicad_pcb")
+    pcb_properties = kicad_pcb_parse(pcb_fn)
     readme_text += (f'-- Stack definition\n'
                     f'Layers: 2\n'
-                    f'Material: FR-4\n'
-                    f'Size: WWxHH mm\n'
+                    f'Material: {pcb_properties["material"]}\n'
+                    f'Size: {pcb_properties["dimensions"][0]}x{pcb_properties["dimensions"][1]} mm\n'
                     f'Stack thickness: 1.6mm\n'
-                    f'Outer layer thickness: 35 um\n'
-                    f'Finishing: ENIG\n')
+                    f'Outer layer thickness: {pcb_properties["thicnkess"] * 1000:.0f} um\n'
+                    f'Finishing: {pcb_properties["finishing_layer"]}\n')
 
     readme_text += f'\n'
     readme_text += get_gerber_section(project_name, CAM_path)
@@ -73,6 +76,9 @@ def get_readme(project_fn, CAM_path):
 
     readme_text += f'\n'
     readme_text += f'-- Notes\n'
+    for key, value in pcb_properties["comments"].items():
+        if key not in ['comment 1']:
+            readme_text += f'{value}\n'
 
     return readme_text
 

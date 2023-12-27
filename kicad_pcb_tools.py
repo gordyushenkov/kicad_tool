@@ -24,5 +24,4 @@ def kicad_pcb_export_pnp(kicad_cli_path, pcb_fn, output_folder):
 def kicad_pcb_export_3d(kicad_cli_path, pcb_fn, output_folder):
     step_fn = output_folder / pcb_fn.stem
     step_fn = step_fn.with_suffix('.step')
-    print(step_fn)
     return [f'"{kicad_cli_path}"' + " pcb export step " + str(pcb_fn) + ' --force -o ' + f'"{str(step_fn)}"']

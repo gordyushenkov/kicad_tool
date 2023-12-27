@@ -97,6 +97,9 @@ def kicad_process_project(kicad_cli_path, project_fn, boms, CAM_folder_name=None
             manuf_arch_fn = create_zip_archive(manuf_archive_path, selected_files)
             msg += f'Manufacturing archive created: {manuf_arch_fn}\n'
 
+            # Remove temporary archives
+            Path(gerber_arch_fn).unlink()
+            Path(CAM_arch_fn).unlink()
 
     return msg
 
