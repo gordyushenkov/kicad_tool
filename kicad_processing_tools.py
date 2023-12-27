@@ -4,7 +4,7 @@
 from pathlib import Path
 import subprocess
 from kicad_sch_tools import kicad_sch_export_bom, kicad_sch_export_pdf
-from kicad_pcb_tools import kicad_pcb_export_gerber, kicad_pcb_export_drill, kicad_pcb_export_pnp
+from kicad_pcb_tools import kicad_pcb_export_gerber, kicad_pcb_export_drill, kicad_pcb_export_pnp, kicad_pcb_export_3d
 from kicad_readme_creator import get_readme, get_readme_fn
 import zipfile
 
@@ -42,12 +42,12 @@ def run_commands(cmds):
             msg += result.stderr
     return msg
 
-def kicad_process_project(kicad_cli_path, project_fn, boms, CAM_folder_name=None, pdf_foldername=None):
+def kicad_process_project(kicad_cli_path, project_fn, boms, CAM_folder_name=None, pdf_foldername=None, step_folder_name=None):
     path_obj = Path(project_fn)
     sch_fn = path_obj.with_suffix(".kicad_sch")
     pcb_fn = path_obj.with_suffix(".kicad_pcb")
     root_folder = path_obj.parent.parent
-    folder_names = [CAM_folder_name, pdf_foldername]
+    folder_names = [CAM_folder_name, pdf_foldername, step_folder_name]
     fld_dict = {}
     for fld in folder_names:
         if fld is not None:
@@ -65,6 +65,9 @@ def kicad_process_project(kicad_cli_path, project_fn, boms, CAM_folder_name=None
         msg += run_commands(kicad_sch_export_pdf(kicad_cli_path, sch_fn, fld_dict[pdf_foldername]))
 
     if pcb_fn.is_file():
+        if step_folder_name is not None:
+            msg += run_commands(kicad_pcb_export_3d(kicad_cli_path, pcb_fn, fld_dict[step_folder_name]))
+
         if CAM_folder_name is not None:
             msg += run_commands(kicad_pcb_export_gerber(kicad_cli_path, pcb_fn, fld_dict[CAM_folder_name], ALL_LAYERS))
             msg += run_commands(kicad_pcb_export_drill(kicad_cli_path, pcb_fn, fld_dict[CAM_folder_name]))
@@ -104,5 +107,6 @@ if __name__ == '__main__':
                  r"C:\Gordiushenkov\SlopeHelper\kicad5_libs\Scripts\bom_csv_KiCad_grouped_by_pn_and_fp_semicol.py"]
     CAM_folder_name = "CAMOutputs"
     pdf_foldername = "PDFs"
-    result = kicad_process_project(kicad_cli_path, project_fn, bom_paths, CAM_folder_name, pdf_foldername)
+    step_folder_name = "3d models"
+    result = kicad_process_project(kicad_cli_path, project_fn, bom_paths, CAM_folder_name, pdf_foldername, step_folder_name)
     print(result)

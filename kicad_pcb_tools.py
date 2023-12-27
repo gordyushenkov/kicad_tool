@@ -18,6 +18,11 @@ def kicad_pcb_export_drill(kicad_cli_path, pcb_fn, output_folder):
 def kicad_pcb_export_pnp(kicad_cli_path, pcb_fn, output_folder):
     pos_fn = output_folder / pcb_fn.stem
     pos_fn = pos_fn.with_stem(pos_fn.stem + '-all-pos').with_suffix('.csv')
-    commands = [f'"{kicad_cli_path}"' + " pcb export pos " + str(pcb_fn) + ' -o ' + str(pos_fn) + \
+    return [f'"{kicad_cli_path}"' + " pcb export pos " + str(pcb_fn) + ' -o ' + str(pos_fn) + \
         ' --side both --format csv --units mm']
-    return commands
+
+def kicad_pcb_export_3d(kicad_cli_path, pcb_fn, output_folder):
+    step_fn = output_folder / pcb_fn.stem
+    step_fn = step_fn.with_suffix('.step')
+    print(step_fn)
+    return [f'"{kicad_cli_path}"' + " pcb export step " + str(pcb_fn) + ' --force -o ' + f'"{str(step_fn)}"']

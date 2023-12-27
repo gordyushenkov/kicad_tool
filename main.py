@@ -16,6 +16,7 @@ bom_paths = [r"C:\Gordiushenkov\SlopeHelper\kicad5_libs\Scripts\bom_csv_eurocirc
     r"C:\Gordiushenkov\SlopeHelper\kicad5_libs\Scripts\bom_csv_KiCad_grouped_by_pn_and_fp_semicol.py"]
 CAM_folder_name = "CAMOutputs"
 PDF_folder_name = 'PDFs'
+step_folder_name = '3d models'
 
 def open_project():
     global project_fn
@@ -24,7 +25,7 @@ def open_project():
 
 def process():
     try:
-        result = kicad_process_project(kicad_cli_path, project_fn, bom_paths, CAM_folder_name, PDF_folder_name)
+        result = kicad_process_project(kicad_cli_path, project_fn, bom_paths, CAM_folder_name, PDF_folder_name, step_folder_name)
 
         text_box_output.delete('1.0', tk.END)
         text_box_output.insert('1.0', result)
