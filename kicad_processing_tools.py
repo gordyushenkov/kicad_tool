@@ -3,9 +3,10 @@
 # Created by: Oleg Gordiushenkov
 from pathlib import Path
 import subprocess
-from kicad_sch_tools import kicad_sch_export_bom, kicad_sch_export_pdf
+from kicad_sch_tools import kicad_sch_export_netlist, kicad_sch_export_pdf
 from kicad_pcb_tools import kicad_pcb_export_gerber, kicad_pcb_export_drill, kicad_pcb_export_pnp, kicad_pcb_export_3d
 from kicad_readme_creator import get_readme, get_readme_fn
+from kicad_bom_writer import make_bom_default
 import zipfile
 
 
@@ -60,7 +61,12 @@ def kicad_process_project(kicad_cli_path, project_fn, boms, CAM_folder_name=None
     msg = ''
 
     if CAM_folder_name is not None:
-        msg += run_commands(kicad_sch_export_bom(kicad_cli_path, sch_fn, fld_dict[CAM_folder_name], boms))
+        path_obj = Path(fld_dict[CAM_folder_name])
+        xml_fn = r'temp.xml'
+        bom_fn = path_obj / sch_fn.stem
+        msg += run_commands(kicad_sch_export_netlist(kicad_cli_path, sch_fn, xml_fn))
+        make_bom_default(xml_fn, bom_fn)
+
     if pdf_foldername is not None:
         msg += run_commands(kicad_sch_export_pdf(kicad_cli_path, sch_fn, fld_dict[pdf_foldername]))
 
@@ -122,7 +128,7 @@ def kicad_pack_documentation(project_fn, CAM_folder_name=None):
     msg = f'Manufacturing archive created: {manuf_arch_fn}\n'
 
     # Remove temporary archives
-    Path(gerber_arch_fn).unlink()
+    # Path(gerber_arch_fn).unlink()
     Path(CAM_arch_fn).unlink()
     return msg
 

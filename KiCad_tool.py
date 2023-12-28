@@ -12,11 +12,13 @@ from kicad_processing_tools import kicad_process_project, kicad_pack_documentati
 
 project_fn=""#"C:\\Gordiushenkov\\Manufacturing\\Outsourcing\\EV48.01_11339_M.zip"
 # kicad_cli_path = r"C:\Program Files\KiCad\7.0\bin\kicad-cli"
-bom_paths = [r"C:\Gordiushenkov\SlopeHelper\kicad5_libs\Scripts\bom_csv_eurocircuits_grouped_dnp.py",
-    r"C:\Gordiushenkov\SlopeHelper\kicad5_libs\Scripts\bom_csv_KiCad_grouped_by_pn_and_fp_semicol.py"]
+bom_paths = [f'bom_csv_grouped_and_separate_dnp.py']
+    # r"C:\Gordiushenkov\SlopeHelper\kicad5_libs\Scripts\bom_csv_eurocircuits_grouped_dnp.py",
+    # r"C:\Gordiushenkov\SlopeHelper\kicad5_libs\Scripts\bom_csv_KiCad_grouped_by_pn_and_fp_semicol.py"]
 CAM_folder_name = "CAMOutputs"
 PDF_folder_name = 'PDFs'
 step_folder_name = '3d models'
+version = "1.0"
 
 def open_project():
     global project_fn
@@ -35,7 +37,11 @@ def process():
             app.update_idletasks()
 
             result = 'Documentation created successfully!\n\n'
-            result += kicad_process_project(kicad_cli_path, project_fn, bom_paths, CAM_folder_name, PDF_folder_name, step_folder_name)
+            result += kicad_process_project(kicad_cli_path, project_fn,
+                                            boms=bom_paths,
+                                            CAM_folder_name = CAM_folder_name,
+                                            pdf_foldername=PDF_folder_name,
+                                            step_folder_name=step_folder_name)
 
             text_box_output.delete('1.0', tk.END)
             text_box_output.insert('1.0', result)
@@ -83,7 +89,7 @@ def on_scroll(*args):
     text_box_output.yview(*args)
 
 app = tk.Tk()
-app.title("CT creator")
+app.title(f"KiCad tool v {version}")
 app.minsize(500, 300)
 
 frame_arch = tk.Frame(app)

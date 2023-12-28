@@ -10,14 +10,17 @@ import re
 METHODS = {
     'ref': 'getRef',
     'description': 'getDescription',
-    'footprint': 'getFootprint'
+    'footprint': 'getFootprint',
+    'libname': 'getLibName',
+    'partname': 'getPartName',
 }
 
 def component_eq(self, other):
     if hasattr(self, 'part_num') and hasattr(other, 'part_num'):
-        return not self.getField('part_num') != other.getField('part_num')
+        return not self.getField('part_num') != other.getField('part_num') \
+        and not self.getPartName() != other.getPartName()
     else:
-        return not self.getDescription() != other.getDescription()
+        return not self.getPartName() != other.getPartName()
 
 
 kicad_netlist_reader.comp.__eq__ = component_eq
@@ -39,8 +42,12 @@ def get_properties(comp, properties):
                 val = func()
                 result_dict[p] = val
         else:
-            val = comp.getField(p)
-            result_dict[p] = val
+            fields = [x.lower() for x in comp.getFieldNames()]
+            if p in fields:
+                val = comp.getField(p)
+                if val == '':
+                    val = '+'
+                result_dict[p] = val
     return result_dict
 
 def get_props_list(prop_dict, properties):
@@ -70,13 +77,34 @@ def custom_sort_key(value):
     # Convert the digits part to an integer for sorting
     return (parts[0], int(parts[1]))
 
-def write_grouped_bom(writer, net, columns_dict):
+
+def component_to_skip(component, include_filters = None, exclude_filters=None):
+    if exclude_filters is None:
+        exclude_filters = []
+    field_names = component.getFieldNames()
+    if include_filters is None:
+        filter = [f.lower() for f in field_names]
+    else:
+        filter = [f.lower() for f in include_filters]
+    skip = False
+    include = False
+    for n in field_names:
+        lowercase = str(n).lower()
+        if lowercase in exclude_filters:
+            skip = True
+        if lowercase in filter:
+            include = True
+    return skip or not include
+
+
+def write_grouped_bom(writer, net, columns_dict, include_filters = None, exclude_filters=None):
     groups = net.groupComponents()
     for group in groups:
         qty = 0
         props = {}
+
         for component in group:
-            if not component.getField("dnp") and not component.getField("DNP") and not component.getField("virtual"):
+            if not component_to_skip(component, include_filters, exclude_filters):
                 p = get_properties(component, columns_dict)
                 p = convert_dict_vals_to_lists(p)
                 if not props:
@@ -90,16 +118,16 @@ def write_grouped_bom(writer, net, columns_dict):
             props['qty'] = [str(qty)]
             writerow(writer, get_props_list(props, columns_dict))
 
-def write_flat_bom(writer, net, columns_dict):
+def write_flat_bom(writer, net, columns_dict, include_filters = None, exclude_filters=None):
     components = net.getInterestingComponents()
     for c in components:
-        if not c.getField("dnp") and not c.getField("DNP") and not c.getField("virtual"):
+        if not component_to_skip(c, include_filters, exclude_filters):
             p = get_properties(c, columns_dict)
             p = convert_dict_vals_to_lists(p)
             writerow(writer, get_props_list(p, columns_dict))
 
 
-def make_bom(xml_fn, filename, grouped=True, columns_dict=None):
+def make_bom(xml_fn, filename, grouped=True, columns_dict=None, include_filters = None, exclude_filters=None, delimiter=';'):
     '''
 
     :param xml_fn: input xml filename
@@ -111,12 +139,12 @@ def make_bom(xml_fn, filename, grouped=True, columns_dict=None):
     try:
         net = kicad_netlist_reader.netlist(xml_fn)
         with open(filename, 'w') as csv_file:
-            writer = csv.writer(csv_file, lineterminator='\n', delimiter=';', quotechar="\"", quoting=csv.QUOTE_ALL)
+            writer = csv.writer(csv_file, lineterminator='\n', delimiter=delimiter, quotechar="\"", quoting=csv.QUOTE_ALL)
             writerow(writer, columns_dict.values())
             if grouped:
-                write_grouped_bom(writer, net, columns_dict)
+                write_grouped_bom(writer, net, columns_dict, include_filters, exclude_filters)
             else:
-                write_flat_bom(writer, net, columns_dict)
+                write_flat_bom(writer, net, columns_dict, include_filters, exclude_filters)
 
 
     except IOError:
@@ -124,11 +152,8 @@ def make_bom(xml_fn, filename, grouped=True, columns_dict=None):
         print(__file__, ":", e, sys.stderr)
         f = sys.stdout
 
-
-if __name__ == '__main__':
-    xml_fn = 'temp.xml'
-    output_fn = 'test'
-    make_bom(xml_fn, output_fn + " flat BOM.csv", grouped=False,
+def make_bom_default(xml_fn, output_fn):
+    make_bom(xml_fn, str(output_fn) + " flat BOM.csv", grouped=False,
              columns_dict={
                  'ref': 'Ref.Des.',
                  'part_num': 'Manufacturer part number',
@@ -138,8 +163,9 @@ if __name__ == '__main__':
                  'digikey': 'Digikey',
                  'farnell': 'Farnell',
                  'footprint': 'Footprint'
-             })
-    make_bom(xml_fn, output_fn + " grouped BOM.csv", grouped=True,
+             },
+             exclude_filters=['dnp', 'virtual'])
+    make_bom(xml_fn, str(output_fn) + " grouped BOM.csv", grouped=True,
              columns_dict={
                  'ref': 'Ref.Des.',
                  'part_num': 'Manufacturer part number',
@@ -150,5 +176,24 @@ if __name__ == '__main__':
                  'digikey': 'Digikey',
                  'farnell': 'Farnell',
                  'footprint': 'Footprint',
+             },
+             exclude_filters=['dnp', 'virtual'])
+    make_bom(xml_fn, str(output_fn) + " not installed.csv", grouped=False,
+             columns_dict={
+                 'ref': 'Ref.Des.',
                  'dnp': 'DNP',
-             })
+                 'virtual': 'virtual',
+                 'part_num': 'Manufacturer part number',
+                 'description': 'Description',
+                 'manufacturer': 'Manufacturer',
+                 'mouser': 'Mouser',
+                 'digikey': 'Digikey',
+                 'farnell': 'Farnell',
+                 'footprint': 'Footprint',
+             },
+             exclude_filters=['virtual'], include_filters=['dnp'])
+
+if __name__ == '__main__':
+    xml_fn = 'temp.xml'
+    output_fn = 'test'
+    make_bom_default(xml_fn, output_fn)

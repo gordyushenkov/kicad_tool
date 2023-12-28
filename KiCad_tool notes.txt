@@ -1,5 +1,5 @@
-- Add config file
-- Update instructions
++ Add config file
++ Update instructions
 - Add automatic detection of number of layers
-- Separate data generation and packing
-- Single BOM script for grouped and ungrouped formats
++ Separate data generation and packing
++ Single BOM script for grouped and ungrouped formats
