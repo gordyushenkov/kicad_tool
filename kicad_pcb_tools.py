@@ -2,8 +2,6 @@
 # Created on: 12/26/2023
 # Created by: Oleg Gordiushenkov
 
-import subprocess
-
 def kicad_pcb_export_gerber(kicad_cli_path, pcb_fn, output_folder, layers=[]):
     commands = []
     for l in layers:
