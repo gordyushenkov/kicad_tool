@@ -82,25 +82,48 @@ def kicad_process_project(kicad_cli_path, project_fn, boms, CAM_folder_name=None
 
 
                 # Packing
-            archive_path = str(fld_dict[CAM_folder_name] / path_obj.stem) + ' gerber'
-            selected_files = list(fld_dict[CAM_folder_name].glob(f'*.gbr')) + list(fld_dict[CAM_folder_name].glob(f'*.drl')) + list(fld_dict[CAM_folder_name].glob(f'*pos*.csv'))
-            gerber_arch_fn = create_zip_archive(archive_path, selected_files)
-            msg += f'Gerber archive created: {gerber_arch_fn}\n'
+            # archive_path = str(fld_dict[CAM_folder_name] / path_obj.stem) + ' gerber'
+            # selected_files = list(fld_dict[CAM_folder_name].glob(f'*.gbr')) + list(fld_dict[CAM_folder_name].glob(f'*.drl')) + list(fld_dict[CAM_folder_name].glob(f'*pos*.csv'))
+            # gerber_arch_fn = create_zip_archive(archive_path, selected_files)
+            # msg += f'Gerber archive created: {gerber_arch_fn}\n'
+            #
+            # CAM_archive_path = str(fld_dict[CAM_folder_name] / path_obj.stem) + ' CAM'
+            # selected_files = list(fld_dict[CAM_folder_name].glob(f'*BOM*.csv')) + [gerber_arch_fn]
+            # CAM_arch_fn = create_zip_archive(CAM_archive_path, selected_files)
+            # msg += f'CAM archive created: {CAM_arch_fn}\n'
+            #
+            # manuf_archive_path = str(fld_dict[CAM_folder_name].parent / path_obj.stem) + ' manufacturing'
+            # selected_files = list(fld_dict[CAM_folder_name].parent.glob(f'*readme*.txt')) + [CAM_arch_fn]
+            # manuf_arch_fn = create_zip_archive(manuf_archive_path, selected_files)
+            # msg += f'Manufacturing archive created: {manuf_arch_fn}\n'
+            #
+            # # Remove temporary archives
+            # Path(gerber_arch_fn).unlink()
+            # Path(CAM_arch_fn).unlink()
 
-            CAM_archive_path = str(fld_dict[CAM_folder_name] / path_obj.stem) + ' CAM'
-            selected_files = list(fld_dict[CAM_folder_name].glob(f'*BOM*.csv')) + [gerber_arch_fn]
-            CAM_arch_fn = create_zip_archive(CAM_archive_path, selected_files)
-            msg += f'CAM archive created: {CAM_arch_fn}\n'
+    return msg
 
-            manuf_archive_path = str(fld_dict[CAM_folder_name].parent / path_obj.stem) + ' manufacturing'
-            selected_files = list(fld_dict[CAM_folder_name].parent.glob(f'*readme*.txt')) + [CAM_arch_fn]
-            manuf_arch_fn = create_zip_archive(manuf_archive_path, selected_files)
-            msg += f'Manufacturing archive created: {manuf_arch_fn}\n'
+def kicad_pack_documentation(project_fn, CAM_folder_name=None):
+    path_obj = Path(project_fn)
+    root_folder = path_obj.parent.parent
+    CAM_folder_path = root_folder / CAM_folder_name
+    archive_path = str(CAM_folder_path / path_obj.stem) + ' gerber'
+    selected_files = list(CAM_folder_path.glob(f'*.gbr')) + list(
+        CAM_folder_path.glob(f'*.drl')) + list(CAM_folder_path.glob(f'*pos*.csv'))
+    gerber_arch_fn = create_zip_archive(archive_path, selected_files)
 
-            # Remove temporary archives
-            Path(gerber_arch_fn).unlink()
-            Path(CAM_arch_fn).unlink()
+    CAM_archive_path = str(CAM_folder_path / path_obj.stem) + ' CAM'
+    selected_files = list(CAM_folder_path.glob(f'*BOM*.csv')) + [gerber_arch_fn]
+    CAM_arch_fn = create_zip_archive(CAM_archive_path, selected_files)
 
+    manuf_archive_path = str(CAM_folder_path.parent / path_obj.stem) + ' manufacturing'
+    selected_files = list(CAM_folder_path.parent.glob(f'*readme*.txt')) + [CAM_arch_fn]
+    manuf_arch_fn = create_zip_archive(manuf_archive_path, selected_files)
+    msg = f'Manufacturing archive created: {manuf_arch_fn}\n'
+
+    # Remove temporary archives
+    Path(gerber_arch_fn).unlink()
+    Path(CAM_arch_fn).unlink()
     return msg
 
 if __name__ == '__main__':

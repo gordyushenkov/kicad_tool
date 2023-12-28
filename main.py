@@ -3,15 +3,15 @@
 # Created by: Oleg Gordiushenkov
 
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, Scrollbar
 import traceback
-import os
+from config_provider import read_config
 
-from kicad_processing_tools import kicad_process_project
+from kicad_processing_tools import kicad_process_project, kicad_pack_documentation
 
 
 project_fn=""#"C:\\Gordiushenkov\\Manufacturing\\Outsourcing\\EV48.01_11339_M.zip"
-kicad_cli_path = r"C:\Program Files\KiCad\7.0\bin\kicad-cli"
+# kicad_cli_path = r"C:\Program Files\KiCad\7.0\bin\kicad-cli"
 bom_paths = [r"C:\Gordiushenkov\SlopeHelper\kicad5_libs\Scripts\bom_csv_eurocircuits_grouped_dnp.py",
     r"C:\Gordiushenkov\SlopeHelper\kicad5_libs\Scripts\bom_csv_KiCad_grouped_by_pn_and_fp_semicol.py"]
 CAM_folder_name = "CAMOutputs"
@@ -25,10 +25,24 @@ def open_project():
 
 def process():
     try:
-        result = kicad_process_project(kicad_cli_path, project_fn, bom_paths, CAM_folder_name, PDF_folder_name, step_folder_name)
+        if project_fn:
+            msg = f'Generating documentation for\n' \
+                  f'{project_fn}\n' \
+                  f'Wait for a while'
+            text_box_output.delete('1.0', tk.END)
+            text_box_output.insert('1.0', msg)
+            app.update()
+            app.update_idletasks()
 
-        text_box_output.delete('1.0', tk.END)
-        text_box_output.insert('1.0', result)
+            result = 'Documentation created successfully!\n\n'
+            result += kicad_process_project(kicad_cli_path, project_fn, bom_paths, CAM_folder_name, PDF_folder_name, step_folder_name)
+
+            text_box_output.delete('1.0', tk.END)
+            text_box_output.insert('1.0', result)
+        else:
+            msg = 'Choose the KiCad project file by pressing the Open button'
+            text_box_output.delete('1.0', tk.END)
+            text_box_output.insert('1.0', msg)
     except Exception as e:
         msg = 'Runtime error occured:\n'
 
@@ -37,8 +51,40 @@ def process():
         text_box_output.delete('1.0', tk.END)
         text_box_output.insert('1.0', msg)
 
+def do_packing():
+    try:
+        if project_fn:
+            msg = f'Packing documentation for\n' \
+                  f'{project_fn}\n' \
+                  f'Wait for a while'
+            text_box_output.delete('1.0', tk.END)
+            text_box_output.insert('1.0', msg)
+            app.update()
+            app.update_idletasks()
+
+            result = 'Documentation archive packed successfully!\n\n'
+            result += kicad_pack_documentation(project_fn, CAM_folder_name)
+
+            text_box_output.delete('1.0', tk.END)
+            text_box_output.insert('1.0', result)
+        else:
+            msg = 'Choose the KiCad project file by pressing the Open button'
+            text_box_output.delete('1.0', tk.END)
+            text_box_output.insert('1.0', msg)
+    except Exception as e:
+        msg = 'Runtime error occured:\n'
+
+        traceback_info = traceback.format_exc()
+        msg += f'{traceback_info}'
+        text_box_output.delete('1.0', tk.END)
+        text_box_output.insert('1.0', msg)
+
+def on_scroll(*args):
+    text_box_output.yview(*args)
+
 app = tk.Tk()
 app.title("CT creator")
+app.minsize(500, 300)
 
 frame_arch = tk.Frame(app)
 frame_arch.pack(fill="x")
@@ -51,19 +97,45 @@ PADX = 5
 PADY = 5
 TEXTWIDTH = 100
 
-open_button = tk.Button(frame_arch, text="KiCad project file", command=open_project)
+open_button = tk.Button(frame_arch, text="Open", command=open_project)
 open_button.pack(padx=PADX, pady=PADY, side='left')
 label_file = tk.Label(frame_arch, text="Choose kicad project file")
 label_file.pack(pady=PADY, side='left')
 
+frame_buttons = tk.Frame(app)
+frame_buttons.pack()
 
-compare_button = tk.Button(frame_output, text="Generate", command=process)
-compare_button.pack(pady=PADY,)
+compare_button = tk.Button(frame_buttons, text="Generate", command=process)
+compare_button.pack(side=tk.LEFT, padx=PADX, pady=PADY,)
 
-text_box_output = tk.Text(frame_output, wrap=tk.WORD, height=40, width=TEXTWIDTH)
-text_box_output.pack(fill=tk.BOTH, expand=True)
+pack_button = tk.Button(frame_buttons, text="Pack", command=do_packing)
+pack_button.pack(side=tk.LEFT, padx=PADX, pady=PADY,)
 
-Instruction = """Instruction"""
+frame_text = tk.Frame(app)
+frame_text.pack(fill=tk.BOTH, expand=True, padx=PADX, pady=PADY,)
+text_box_output = tk.Text(frame_text, wrap=tk.WORD, height=40, width=TEXTWIDTH)
+text_box_output.pack(side="left", fill=tk.BOTH, expand=True)
+
+scrollbar = Scrollbar(frame_text, command=on_scroll)
+scrollbar.pack(side="right", fill="y")
+text_box_output.config(yscrollcommand=scrollbar.set)
+
+config = read_config('config.yml')
+if not config or 'kicad_cli_path' not in config:
+    Instruction = """Create the configuration file in YAML format:\n
+    1. Create a config.yml file in the executable directory or rename the template provided
+    2. Put the following line into config.yml kicad_cli_path: [path_to_kicad-cli], 
+    where [path_to_kicad-cli] is the pathe to the kicad-cli.exe application distributed with KiCad
+    Default location is within the KiCad installation folder
+    C:\Program Files\KiCad\7.0\bin\kicad-cli
+    3. Restart the application
+    """
+else:
+    kicad_cli_path = config['kicad_cli_path']
+    Instruction = """Instruction:
+    1. Choose the kicad project file by pressing the Open button
+    2. Press the generate button to create documentation
+    3. Press the pack button to create manufacturing archive"""
 
 text_box_output.insert('1.0', Instruction)
 
