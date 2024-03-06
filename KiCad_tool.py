@@ -18,7 +18,7 @@ bom_paths = [f'bom_csv_grouped_and_separate_dnp.py']
 CAM_folder_name = "CAMOutputs"
 PDF_folder_name = 'PDFs'
 step_folder_name = '3d models'
-version = "1.0"
+version = "1.1"
 
 def open_project():
     global project_fn

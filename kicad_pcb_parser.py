@@ -54,9 +54,9 @@ def get_dimensions(pcb_content):
             match = re.search(pattern, byline[line_num - 2])
             if match:
                 for i in [1, 3]:
-                    x_list.append(int(match.group(i)))
+                    x_list.append(float(match.group(i)))
                 for i in [2, 4]:
-                    y_list.append(int(match.group(i)))
+                    y_list.append(float(match.group(i)))
         if x_list:
             dims[0] = max(x_list) - min(x_list)
         if y_list:

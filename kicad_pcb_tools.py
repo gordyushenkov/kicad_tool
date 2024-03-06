@@ -23,3 +23,13 @@ def kicad_pcb_export_3d(kicad_cli_path, pcb_fn, output_folder):
     step_fn = output_folder / pcb_fn.stem
     step_fn = step_fn.with_suffix('.step')
     return [f'"{kicad_cli_path}"' + " pcb export step " + str(pcb_fn) + ' --force -o ' + f'"{str(step_fn)}"']
+
+def kicad_pcb_export_drawings(kicad_cli_path, pcb_fn, filename, layers):
+    layer_list = ", ".join(layers)
+    mirror = ''
+    for l in layers:
+        if 'B' in l:
+            mirror = ' --mirror'
+    command = f'"{kicad_cli_path}"' + " pcb export pdf " + str(pcb_fn) + ' -o ' + f'"{filename}"' +\
+        ' --layers ' + layer_list + ',Edge.Cuts' + mirror + ' --exclude-value --black-and-white'
+    return [command]

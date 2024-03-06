@@ -48,6 +48,13 @@ def get_BOMs(project_name, CAM_path):
         text += f'{f.name}\n'
     return text
 
+def get_assembly(project_name, CAM_path):
+    text = '-- Assembly\n'
+    selected_files = list(Path(CAM_path).glob(f'{project_name}*assy.pdf'))
+    for f in selected_files:
+        text += f'{f.name}\n'
+    return text
+
 def get_readme(project_fn, CAM_path):
     project_name = Path(project_fn).stem
     readme_fn = Path(get_readme_fn(project_fn)).name
@@ -73,6 +80,9 @@ def get_readme(project_fn, CAM_path):
 
     readme_text += f'\n'
     readme_text += get_BOMs(project_name, CAM_path)
+
+    readme_text += f'\n'
+    readme_text += get_assembly(project_name, CAM_path)
 
     readme_text += f'\n'
     readme_text += f'-- Notes\n'
