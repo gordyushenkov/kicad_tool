@@ -16,7 +16,9 @@ ALL_LAYERS = [
     'F.Paste',
     'F.Mask',
     'F.Cu',
+    #'In1.Cu' after adding generates a bunch of extra gerber files
     'Edge.Cuts',
+    #'In2.Cu'
     'B.Cu',
     'B.Mask',
     'B.Paste',
@@ -66,7 +68,11 @@ def kicad_process_project(kicad_cli_path, project_fn, boms, CAM_folder_name=None
         xml_fn = r'temp.xml'
         bom_fn = path_obj / sch_fn.stem
         msg += run_commands(kicad_sch_export_netlist(kicad_cli_path, sch_fn, xml_fn))
-        make_bom_default(xml_fn, bom_fn)
+        bom_out = make_bom_default(xml_fn, bom_fn)
+        if len(bom_out):
+            msg += '!!!!!!!!!!!!!!!!!!!!!!!!!!\n'
+            msg += bom_out
+            msg += '!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n'
 
     if pdf_foldername is not None:
         msg += run_commands(kicad_sch_export_pdf(kicad_cli_path, sch_fn, fld_dict[pdf_foldername]))

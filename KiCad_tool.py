@@ -18,7 +18,8 @@ bom_paths = [f'bom_csv_grouped_and_separate_dnp.py']
 CAM_folder_name = "CAMOutputs"
 PDF_folder_name = 'PDFs'
 step_folder_name = '3d models'
-version = "1.1"
+version = "1.2"
+date = "2024.04.16"
 
 def open_project():
     global project_fn
@@ -89,7 +90,7 @@ def on_scroll(*args):
     text_box_output.yview(*args)
 
 app = tk.Tk()
-app.title(f"KiCad tool v {version}")
+app.title(f"KiCad tool v {version} ({date})")
 app.minsize(500, 300)
 
 frame_arch = tk.Frame(app)

@@ -88,16 +88,24 @@ def component_to_skip(component, include_filters = None, exclude_filters=None):
         filter = [f.lower() for f in include_filters]
     skip = False
     include = False
+    # For the case if no attributes are set
+    if not field_names:
+        include = True
+
     for n in field_names:
         lowercase = str(n).lower()
         if lowercase in exclude_filters:
             skip = True
         if lowercase in filter:
             include = True
+    print(f'Skip: {skip}, include: {include}, component: {component.getRef()}')
+    if not include:
+        print(f'{field_names}')
     return skip or not include
 
 
-def write_grouped_bom(writer, net, columns_dict, include_filters = None, exclude_filters=None):
+def write_grouped_bom(writer, net, columns_dict, include_filters = None, exclude_filters=None, obligatory=None):
+    msg = ''
     groups = net.groupComponents()
     for group in groups:
         qty = 0
@@ -105,6 +113,10 @@ def write_grouped_bom(writer, net, columns_dict, include_filters = None, exclude
 
         for component in group:
             if not component_to_skip(component, include_filters, exclude_filters):
+                if obligatory is not None:
+                    for o in obligatory:
+                        if o not in p.keys() or not p[o]:
+                            msg += f'Component {component.getRef()} does not have property "{o}"\n'
                 p = get_properties(component, columns_dict)
                 p = convert_dict_vals_to_lists(p)
                 if not props:
@@ -117,17 +129,24 @@ def write_grouped_bom(writer, net, columns_dict, include_filters = None, exclude
             props['ref'] = sorted(props['ref'], key=custom_sort_key)
             props['qty'] = [str(qty)]
             writerow(writer, get_props_list(props, columns_dict))
+    return msg
 
-def write_flat_bom(writer, net, columns_dict, include_filters = None, exclude_filters=None):
+def write_flat_bom(writer, net, columns_dict, include_filters = None, exclude_filters=None, obligatory=None):
+    msg = ''
     components = net.getInterestingComponents()
     for c in components:
         if not component_to_skip(c, include_filters, exclude_filters):
             p = get_properties(c, columns_dict)
             p = convert_dict_vals_to_lists(p)
+            if obligatory is not None:
+                for o in obligatory:
+                    if o not in p.keys() or not p[o]:
+                        msg += f'Component {c.getRef()} does not have property "{o}"\n'
             writerow(writer, get_props_list(p, columns_dict))
+    return msg
 
 
-def make_bom(xml_fn, filename, grouped=True, columns_dict=None, include_filters = None, exclude_filters=None, delimiter=';'):
+def make_bom(xml_fn, filename, grouped=True, columns_dict=None, include_filters = None, exclude_filters=None, delimiter=';', obligatory=None):
     '''
 
     :param xml_fn: input xml filename
@@ -136,24 +155,27 @@ def make_bom(xml_fn, filename, grouped=True, columns_dict=None, include_filters 
     :param columns_dict: dictionary with columns in format property: title
     :return: report as a string
     '''
+    msg = ''
     try:
         net = kicad_netlist_reader.netlist(xml_fn)
         with open(filename, 'w') as csv_file:
             writer = csv.writer(csv_file, lineterminator='\n', delimiter=delimiter, quotechar="\"", quoting=csv.QUOTE_ALL)
             writerow(writer, columns_dict.values())
             if grouped:
-                write_grouped_bom(writer, net, columns_dict, include_filters, exclude_filters)
+                msg += write_grouped_bom(writer, net, columns_dict, include_filters, exclude_filters, obligatory)
             else:
-                write_flat_bom(writer, net, columns_dict, include_filters, exclude_filters)
+                msg += write_flat_bom(writer, net, columns_dict, include_filters, exclude_filters, obligatory)
 
 
     except IOError:
         e = "Can't open output file for writing: " + filename
         print(__file__, ":", e, sys.stderr)
-        f = sys.stdout
+        msg += sys.stdout
+    return msg
 
 def make_bom_default(xml_fn, output_fn):
-    make_bom(xml_fn, str(output_fn) + " flat BOM.csv", grouped=False,
+    msg = ''
+    msg += make_bom(xml_fn, str(output_fn) + " flat BOM.csv", grouped=False,
              columns_dict={
                  'ref': 'Ref.Des.',
                  'part_num': 'Manufacturer part number',
@@ -164,8 +186,9 @@ def make_bom_default(xml_fn, output_fn):
                  'farnell': 'Farnell',
                  'footprint': 'Footprint'
              },
-             exclude_filters=['dnp', 'virtual'])
-    make_bom(xml_fn, str(output_fn) + " grouped BOM.csv", grouped=True,
+             exclude_filters=['dnp', 'virtual'],
+             obligatory=['part_num'])
+    msg += make_bom(xml_fn, str(output_fn) + " grouped BOM.csv", grouped=True,
              columns_dict={
                  'ref': 'Ref.Des.',
                  'part_num': 'Manufacturer part number',
@@ -178,7 +201,7 @@ def make_bom_default(xml_fn, output_fn):
                  'footprint': 'Footprint',
              },
              exclude_filters=['dnp', 'virtual'])
-    make_bom(xml_fn, str(output_fn) + " not installed.csv", grouped=False,
+    msg += make_bom(xml_fn, str(output_fn) + " not installed.csv", grouped=False,
              columns_dict={
                  'ref': 'Ref.Des.',
                  'dnp': 'DNP',
@@ -192,6 +215,7 @@ def make_bom_default(xml_fn, output_fn):
                  'footprint': 'Footprint',
              },
              exclude_filters=['virtual'], include_filters=['dnp'])
+    return msg
 
 if __name__ == '__main__':
     xml_fn = 'temp.xml'
