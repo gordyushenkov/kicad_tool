@@ -98,9 +98,9 @@ def component_to_skip(component, include_filters = None, exclude_filters=None):
             skip = True
         if lowercase in filter:
             include = True
-    print(f'Skip: {skip}, include: {include}, component: {component.getRef()}')
-    if not include:
-        print(f'{field_names}')
+    # print(f'Skip: {skip}, include: {include}, component: {component.getRef()}')
+    # if not include:
+    #     print(f'{field_names}')
     return skip or not include
 
 

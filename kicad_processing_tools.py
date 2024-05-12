@@ -67,7 +67,11 @@ def kicad_process_project(kicad_cli_path, project_fn, boms, CAM_folder_name=None
         path_obj = Path(fld_dict[CAM_folder_name])
         xml_fn = r'temp.xml'
         bom_fn = path_obj / sch_fn.stem
-        msg += run_commands(kicad_sch_export_netlist(kicad_cli_path, sch_fn, xml_fn))
+        cmds = kicad_sch_export_netlist(kicad_cli_path, sch_fn, xml_fn)
+        print(cmds)
+        msg += run_commands(cmds)
+        print(msg)
+
         bom_out = make_bom_default(xml_fn, bom_fn)
         if len(bom_out):
             msg += '!!!!!!!!!!!!!!!!!!!!!!!!!!\n'
