@@ -1,0 +1,2 @@
+- windows support
+- check "tening vias" option

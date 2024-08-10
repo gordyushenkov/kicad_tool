@@ -187,6 +187,7 @@ def make_bom_default(xml_fn, output_fn):
                  'footprint': 'Footprint'
              },
              exclude_filters=['dnp', 'virtual'],
+             delimiter = ',',
              obligatory=['part_num'])
     msg += make_bom(xml_fn, str(output_fn) + " grouped BOM.csv", grouped=True,
              columns_dict={
