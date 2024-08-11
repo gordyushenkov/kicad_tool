@@ -1,0 +1,14 @@
+Installing required packages:
+1. Tkinter:
+sudo apt-get install python3-tk
+2. Yaml for python:
+pip install pyyaml
+or
+sudo apt-get install python3-yaml
+for me worked the second option
+
+Configuring path to the kicad-cli executable
+Create config.yml with the following content
+kicad_cli_path: /bin/kicad-cli
+or copy and rename the file config_linux.yml in the repository
+If KiCad was installed to different location specify the correct path to the kicad-cli file
