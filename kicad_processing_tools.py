@@ -72,6 +72,14 @@ def kicad_process_project(kicad_cli_path, project_fn, boms, CAM_folder_name=None
         msg += run_commands(cmds)
         print(msg)
 
+        if not Path(xml_fn).is_file():
+            return msg + (
+                f'\nError: netlist export did not produce "{xml_fn}".\n'
+                f'Check that kicad_cli_path in config.yml is correct.\n'
+                f'(For the KiCad AppImage it must be the AppImage path followed by '
+                f'the kicad-cli subcommand, e.g. /path/to/KiCad.AppImage kicad-cli)\n'
+            )
+
         bom_out = make_bom_default(xml_fn, bom_fn)
         if len(bom_out):
             msg += '!!!!!!!!!!!!!!!!!!!!!!!!!!\n'

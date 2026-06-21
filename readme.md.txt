@@ -1,1 +1,0 @@
-Run python KiCad_tool.py to start

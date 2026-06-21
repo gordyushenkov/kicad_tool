@@ -1,6 +1,0 @@
-+ Add config file
-+ Update instructions
-- Add automatic detection of number of layers
-+ Separate data generation and packing
-+ Single BOM script for grouped and ungrouped formats
-- components with "part_num" property are not handeled to BOM

@@ -1,1 +1,11 @@
+# Path to the kicad-cli executable shipped with KiCad.
+#
+# Standard install (kicad-cli is its own binary):
 kicad_cli_path: /bin/kicad-cli
+#
+# KiCad AppImage (kicad-cli is a SUBCOMMAND of the AppImage, so give both,
+# separated by a space):
+# kicad_cli_path: /home/user/Applications/KiCad.AppImage kicad-cli
+#
+# If the path itself contains spaces, quote only the path:
+# kicad_cli_path: "/home/user/My Apps/KiCad.AppImage" kicad-cli

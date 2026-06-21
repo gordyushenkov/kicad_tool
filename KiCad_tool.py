@@ -130,11 +130,15 @@ text_box_output.config(yscrollcommand=scrollbar.set)
 config = read_config('config.yml')
 if not config or 'kicad_cli_path' not in config:
     Instruction = """Create the configuration file in YAML format:\n
-    1. Create a config.yml file in the executable directory or rename the template provided
-    2. Put the following line into config.yml kicad_cli_path: [path_to_kicad-cli], 
-    where [path_to_kicad-cli] is the pathe to the kicad-cli.exe application distributed with KiCad
-    Default location is within the KiCad installation folder
-    C:\Program Files\KiCad\7.0\bin\kicad-cli
+    1. Create a config.yml file in the executable directory or rename the template provided (config_linux.yml)
+    2. Put the following line into config.yml: kicad_cli_path: [path_to_kicad-cli],
+    where [path_to_kicad-cli] is the path to the kicad-cli executable distributed with KiCad.
+    Default location is within the KiCad installation folder, for example:
+       Windows: "C:\\Program Files\\KiCad\\7.0\\bin\\kicad-cli"   (quote paths with spaces)
+       Linux:   /bin/kicad-cli
+    For the KiCad AppImage, kicad-cli is a subcommand, so give both the AppImage path
+    and the subcommand separated by a space, for example:
+       /home/user/Applications/KiCad.AppImage kicad-cli
     3. Restart the application
     """
 else:

@@ -12,3 +12,10 @@ Create config.yml with the following content
 kicad_cli_path: /bin/kicad-cli
 or copy and rename the file config_linux.yml in the repository
 If KiCad was installed to different location specify the correct path to the kicad-cli file
+
+If you use the KiCad AppImage, kicad-cli is a subcommand of the AppImage, not a
+separate binary, so specify both the AppImage path and the subcommand separated by a
+space:
+kicad_cli_path: /home/user/Applications/KiCad.AppImage kicad-cli
+If the path itself contains spaces, quote only the path:
+kicad_cli_path: "/home/user/My Apps/KiCad.AppImage" kicad-cli
